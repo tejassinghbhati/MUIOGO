@@ -98,11 +98,11 @@ def copy():
                 "message": 'Model <b>'+ case + '</b> copied!',
                 "status_code": "success"
             }
-        return jsonify(response), 200
+        return(response)
     except(IOError):
         raise IOError
     except OSError:
-        raise OSError
+        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
 
 @case_api.route("/deleteCase", methods=['POST'])
 def deleteCase():
@@ -124,10 +124,10 @@ def deleteCase():
             "status_code": "success_session"
         }
         return jsonify(response), 200
-    except(IOError):
-        return jsonify('No existing cases!'), 404
+    except IOError:
+        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
     except OSError:
-        raise OSError
+        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
 
 @case_api.route("/getResultData", methods=['POST'])
 def getResultData():
