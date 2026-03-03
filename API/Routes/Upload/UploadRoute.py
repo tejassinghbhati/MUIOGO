@@ -208,8 +208,8 @@ def backupCase():
         #case = request.json['casename']
         case = request.args.get('case')
 
-        casePath = Path('WebAPP', 'DataStorage',case)
-        zippedFile = Path('WebAPP', 'DataStorage', case+'.zip')
+        casePath = Path(Config.DATA_STORAGE, case)
+        zippedFile = Path(Config.DATA_STORAGE, case + '.zip')
 
         '''File system data storage'''
         with ZipFile(zippedFile, 'w') as zipObj:
