@@ -4,13 +4,17 @@ from pathlib import Path
 import shutil
 from Classes.Base import Config
 from Classes.Base.SyncS3 import SyncS3
+from Classes.Base.RequestValidator import get_required_fields
 
 syncs3_api = Blueprint('SyncS3Route', __name__)
 
 @syncs3_api.route("/deleteResultsPreSync", methods=['POST'])
 def deleteResultsPreSync():
     try:        
-        case = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        case = fields['casename']
         
         resPath = Path(Config.DATA_STORAGE, case, 'res')
         dataPath = Path(Config.DATA_STORAGE, case, 'data.txt')
@@ -30,7 +34,10 @@ def deleteResultsPreSync():
 @syncs3_api.route("/uploadSync", methods=['POST'])
 def uploadSync():
     try:        
-        case = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        case = fields['casename']
 
         s3 = SyncS3()
         localDir = Path(Config.DATA_STORAGE, case)
@@ -49,7 +56,10 @@ def uploadSync():
 @syncs3_api.route("/deleteSync", methods=['POST'])
 def deleteSync():
     try:        
-        case = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        case = fields['casename']
 
         s3 = SyncS3()
         s3.deleteSync(case)
@@ -67,8 +77,11 @@ def deleteSync():
 @syncs3_api.route("/updateSync", methods=['POST'])
 def updateSync():
     try:        
-        case = request.json['casename']
-        filename = request.json['file']
+        fields, err = get_required_fields(['casename', 'file'])
+        if err:
+            return err
+        case = fields['casename']
+        filename = fields['file']
 
         s3 = SyncS3()
         localDir = Path(Config.DATA_STORAGE, case, str(filename))

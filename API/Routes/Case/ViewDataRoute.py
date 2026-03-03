@@ -1,12 +1,16 @@
 from flask import Blueprint, jsonify, request
 from Classes.Case.OsemosysClass import Osemosys
+from Classes.Base.RequestValidator import get_required_fields
 
 viewdata_api = Blueprint('ViewDataRoute', __name__)
 
 @viewdata_api.route("/viewData", methods=['POST'])
 def viewData():
     try:
-        casename = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        casename = fields['casename']
         if casename != None:
             osy = Osemosys(casename)
             data = {}
@@ -23,7 +27,10 @@ def viewData():
 @viewdata_api.route("/viewTEData", methods=['POST'])
 def viewTEData():
     try:
-        casename = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        casename = fields['casename']
         if casename != None:
             osy = Osemosys(casename)
             data = {}
@@ -39,18 +46,19 @@ def viewTEData():
 @viewdata_api.route("/updateViewData", methods=['POST'])
 def updateViewData():
     try:
-        #casename, updateType, groupId, paramId, TechId, CommId, EmisId, Timeslice
-        casename = request.json['casename']
-        #updateType = request.json['updateType']
-        year = request.json['year']
-        ScId = request.json['ScId']
-        groupId = request.json['groupId']
-        paramId = request.json['paramId']
-        TechId = request.json['TechId']
-        CommId = request.json['CommId']
-        EmisId = request.json['EmisId']
-        Timeslice = request.json['Timeslice']
-        value = request.json['value']
+        fields, err = get_required_fields(['casename', 'year', 'ScId', 'groupId', 'paramId', 'TechId', 'CommId', 'EmisId', 'Timeslice', 'value'])
+        if err:
+            return err
+        casename   = fields['casename']
+        year       = fields['year']
+        ScId       = fields['ScId']
+        groupId    = fields['groupId']
+        paramId    = fields['paramId']
+        TechId     = fields['TechId']
+        CommId     = fields['CommId']
+        EmisId     = fields['EmisId']
+        Timeslice  = fields['Timeslice']
+        value      = fields['value']
 
         if casename != None:
             osy = Osemosys(casename)
@@ -72,14 +80,16 @@ def updateViewData():
 @viewdata_api.route("/updateTEViewData", methods=['POST'])
 def updateTEViewData():
     try:
-        #casename, updateType, groupId, paramId, TechId, CommId, EmisId, Timeslice
-        casename = request.json['casename']
-        scId = request.json['scId']
-        groupId = request.json['groupId']
-        paramId = request.json['paramId']
-        techId = request.json['techId']
-        emisId = request.json['emisId']
-        value = request.json['value']
+        fields, err = get_required_fields(['casename', 'scId', 'groupId', 'paramId', 'techId', 'emisId', 'value'])
+        if err:
+            return err
+        casename = fields['casename']
+        scId     = fields['scId']
+        groupId  = fields['groupId']
+        paramId  = fields['paramId']
+        techId   = fields['techId']
+        emisId   = fields['emisId']
+        value    = fields['value']
 
         if casename != None:
             osy = Osemosys(casename)

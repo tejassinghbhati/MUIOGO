@@ -9,6 +9,7 @@ from Classes.Case.CaseClass import Case
 from Classes.Case.UpdateCaseClass import UpdateCase
 from Classes.Case.ImportTemplate import ImportTemplate
 from Classes.Base.SyncS3 import SyncS3
+from Classes.Base.RequestValidator import get_required_fields
 
 case_api = Blueprint('CaseRoute', __name__)
 
@@ -41,8 +42,11 @@ def getCases():
 @case_api.route("/getResultCSV", methods=['POST'])
 def getResultCSV():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
+        fields, err = get_required_fields(['casename', 'caserunname'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
         csvFolder = Path(Config.DATA_STORAGE,casename,"res", caserunname, "csv")
         if os.path.isdir(csvFolder):
             csvs = [ f.name for f in os.scandir(csvFolder) ]
@@ -55,7 +59,10 @@ def getResultCSV():
 @case_api.route("/getDesc", methods=['POST'])
 def getDesc():
     try:
-        casename = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        casename = fields['casename']
         genDataPath = Path(Config.DATA_STORAGE,casename,"genData.json")
         genData = File.readFile(genDataPath)
         response = {
@@ -69,7 +76,10 @@ def getDesc():
 @case_api.route("/copyCase", methods=['POST'])
 def copy():
     try:
-        case = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        case = fields['casename']
         active_case = session.get('osycase')
 
         if not active_case:
@@ -107,7 +117,10 @@ def copy():
 @case_api.route("/deleteCase", methods=['POST'])
 def deleteCase():
     try:
-        case = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        case = fields['casename']
         active_case = session.get('osycase')
 
         if not active_case:
@@ -132,8 +145,11 @@ def deleteCase():
 @case_api.route("/getResultData", methods=['POST'])
 def getResultData():
     try:
-        casename = request.json['casename']
-        dataJson = request.json['dataJson']
+        fields, err = get_required_fields(['casename', 'dataJson'])
+        if err:
+            return err
+        casename = fields['casename']
+        dataJson = fields['dataJson']
         if casename != None:
             dataPath = Path(Config.DATA_STORAGE,casename,'view',dataJson)
             data = File.readFile(dataPath)
@@ -148,7 +164,10 @@ def getResultData():
 @case_api.route("/getParamFile", methods=['POST'])
 def getParamFile():
     try:
-        dataJson = request.json['dataJson']
+        fields, err = get_required_fields(['dataJson'])
+        if err:
+            return err
+        dataJson = fields['dataJson']
         configPath = Path(Config.DATA_STORAGE, dataJson)
         ConfigFile = File.readParamFile(configPath)
         response = ConfigFile       
@@ -159,7 +178,10 @@ def getParamFile():
 @case_api.route("/resultsExists", methods=['POST'])
 def resultsExists():
     try:
-        casename = request.json['casename']
+        fields, err = get_required_fields(['casename'])
+        if err:
+            return err
+        casename = fields['casename']
         if casename != None:
             resPath = Path(Config.DATA_STORAGE, casename, 'view', 'RYT.json')
             dataPath = Path(Config.DATA_STORAGE,casename,'view','resData.json')
@@ -182,8 +204,11 @@ def resultsExists():
 @case_api.route("/saveParamFile", methods=['POST'])
 def saveParamFile():
     try:
-        ParamData = request.json['ParamData']
-        VarData = request.json['VarData']
+        fields, err = get_required_fields(['ParamData', 'VarData'])
+        if err:
+            return err
+        ParamData = fields['ParamData']
+        VarData = fields['VarData']
 
         paramPath = Path(Config.DATA_STORAGE, 'Parameters.json')
         varPath = Path(Config.DATA_STORAGE, 'Variables.json')
@@ -201,8 +226,11 @@ def saveParamFile():
 @case_api.route("/saveScOrder", methods=['POST'])
 def saveScOrder():
     try:
-        data = request.json['data']
-        case = request.json['casename']
+        fields, err = get_required_fields(['data', 'casename'])
+        if err:
+            return err
+        data = fields['data']
+        case = fields['casename']
         genDataPath = Path(Config.DATA_STORAGE, case, 'genData.json')
         genData = File.readFile(genDataPath)
         genData['osy-scenarios'] = data
@@ -219,10 +247,13 @@ def saveScOrder():
 @case_api.route("/updateData", methods=['POST'])
 def updateData():
     try:
-        data = request.json['data']
-        param = request.json['param']
+        fields, err = get_required_fields(['data', 'param', 'dataJson'])
+        if err:
+            return err
+        data = fields['data']
+        param = fields['param']
         case = session.get('osycase', None)
-        dataJson = request.json['dataJson']
+        dataJson = fields['dataJson']
         dataPath = Path(Config.DATA_STORAGE, case, dataJson)
         if case != None:
             sourceData = File.readFile(dataPath)
@@ -240,7 +271,10 @@ def updateData():
 @case_api.route("/saveCase", methods=['POST'])
 def saveCase():
     try:
-        genData = request.json['data']
+        fields, err = get_required_fields(['data'])
+        if err:
+            return err
+        genData = fields['data']
         casename = genData['osy-casename']
         case = session.get('osycase', None)
 
@@ -396,8 +430,11 @@ def saveCase():
 @case_api.route("/prepareCSV", methods=['POST'])
 def prepareCSV():
     try:
-        casename = request.json['casename']
-        jsonData = request.json['jsonData']
+        fields, err = get_required_fields(['casename', 'jsonData'])
+        if err:
+            return err
+        casename = fields['casename']
+        jsonData = fields['jsonData']
 
         Pd = pd.DataFrame(jsonData)
 
@@ -437,7 +474,10 @@ def downloadCSV():
 @case_api.route("/importTemplate", methods=['POST'])
 def run():
     try:
-        data = request.json['data']
+        fields, err = get_required_fields(['data'])
+        if err:
+            return err
+        data = fields['data']
         template = ImportTemplate(data["osy-template"])
         response = template.importProcess(data)
  

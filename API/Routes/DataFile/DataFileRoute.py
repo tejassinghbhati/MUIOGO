@@ -3,14 +3,18 @@ from pathlib import Path
 import shutil, datetime, time, os
 from Classes.Case.DataFileClass import DataFile
 from Classes.Base import Config
+from Classes.Base.RequestValidator import get_required_fields
 
 datafile_api = Blueprint('DataFileRoute', __name__)
 
 @datafile_api.route("/generateDataFile", methods=['POST'])
 def generateDataFile():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
+        fields, err = get_required_fields(['casename', 'caserunname'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
 
         if casename != None:
             txtFile = DataFile(casename)
@@ -26,9 +30,12 @@ def generateDataFile():
 @datafile_api.route("/createCaseRun", methods=['POST'])
 def createCaseRun():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
-        data = request.json['data']
+        fields, err = get_required_fields(['casename', 'caserunname', 'data'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
+        data = fields['data']
 
         if casename != None:
             caserun = DataFile(casename)
@@ -41,10 +48,13 @@ def createCaseRun():
 @datafile_api.route("/updateCaseRun", methods=['POST'])
 def updateCaseRun():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
-        oldcaserunname = request.json['oldcaserunname']
-        data = request.json['data']
+        fields, err = get_required_fields(['casename', 'caserunname', 'oldcaserunname', 'data'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
+        oldcaserunname = fields['oldcaserunname']
+        data = fields['data']
 
         if casename != None:
             caserun = DataFile(casename)
@@ -57,10 +67,13 @@ def updateCaseRun():
 @datafile_api.route("/deleteCaseRun", methods=['POST'])
 def deleteCaseRun():
     try:        
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
-        resultsOnly = request.json['resultsOnly']
-        
+        fields, err = get_required_fields(['casename', 'caserunname', 'resultsOnly'])
+        if err:
+            return err
+        casename    = fields['casename']
+        caserunname = fields['caserunname']
+        resultsOnly = fields['resultsOnly']
+
         casePath = Path(Config.DATA_STORAGE, casename, 'res', caserunname)
         if not resultsOnly:
             shutil.rmtree(casePath)
@@ -97,8 +110,11 @@ def deleteCaseRun():
 @datafile_api.route("/deleteScenarioCaseRuns", methods=['POST'])
 def deleteScenarioCaseRuns():
     try:
-        scenarioId = request.json['scenarioId']
-        casename = request.json['casename']
+        fields, err = get_required_fields(['scenarioId', 'casename'])
+        if err:
+            return err
+        scenarioId = fields['scenarioId']
+        casename = fields['casename']
 
         if casename != None:
             caserun = DataFile(casename)
@@ -111,9 +127,12 @@ def deleteScenarioCaseRuns():
 @datafile_api.route("/saveView", methods=['POST'])
 def saveView():
     try:
-        casename = request.json['casename']
-        param = request.json['param']
-        data = request.json['data']
+        fields, err = get_required_fields(['casename', 'param', 'data'])
+        if err:
+            return err
+        casename = fields['casename']
+        param = fields['param']
+        data = fields['data']
 
         if casename != None:
             caserun = DataFile(casename)
@@ -126,9 +145,12 @@ def saveView():
 @datafile_api.route("/updateViews", methods=['POST'])
 def updateViews():
     try:
-        casename = request.json['casename']
-        param = request.json['param']
-        data = request.json['data']
+        fields, err = get_required_fields(['casename', 'param', 'data'])
+        if err:
+            return err
+        casename = fields['casename']
+        param = fields['param']
+        data = fields['data']
 
         if casename != None:
             caserun = DataFile(casename)
@@ -141,8 +163,11 @@ def updateViews():
 @datafile_api.route("/readDataFile", methods=['POST'])
 def readDataFile():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
+        fields, err = get_required_fields(['casename', 'caserunname'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
         if casename != None:
             txtFile = DataFile(casename)
             data = txtFile.readDataFile(caserunname)
@@ -156,8 +181,11 @@ def readDataFile():
 @datafile_api.route("/validateInputs", methods=['POST'])
 def validateInputs():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
+        fields, err = get_required_fields(['casename', 'caserunname'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
         if casename != None:
             df = DataFile(casename)
             validation = df.validateInputs(caserunname)
@@ -226,9 +254,12 @@ def downloadResultsFile():
 @datafile_api.route("/run", methods=['POST'])
 def run():
     try:
-        casename = request.json['casename']
-        caserunname = request.json['caserunname']
-        solver = request.json['solver']
+        fields, err = get_required_fields(['casename', 'caserunname', 'solver'])
+        if err:
+            return err
+        casename = fields['casename']
+        caserunname = fields['caserunname']
+        solver = fields['solver']
         txtFile = DataFile(casename)
         response = txtFile.run(solver, caserunname)     
         return jsonify(response), 200
@@ -243,8 +274,11 @@ def run():
 def batchRun():
     try:
         start = time.time()
-        modelname = request.json['modelname']
-        cases = request.json['cases']
+        fields, err = get_required_fields(['modelname', 'cases'])
+        if err:
+            return err
+        modelname = fields['modelname']
+        cases = fields['cases']
 
         if modelname != None:
             txtFile = DataFile(modelname)
@@ -261,7 +295,10 @@ def batchRun():
 @datafile_api.route("/cleanUp", methods=['POST'])
 def cleanUp():
     try:
-        modelname = request.json['modelname']
+        fields, err = get_required_fields(['modelname'])
+        if err:
+            return err
+        modelname = fields['modelname']
 
         if modelname != None:
             model = DataFile(modelname)
