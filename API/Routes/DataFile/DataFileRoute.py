@@ -12,6 +12,9 @@ def generateDataFile():
         casename = request.json['casename']
         caserunname = request.json['caserunname']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+
         if casename != None:
             txtFile = DataFile(casename)
             txtFile.generateDatafile(caserunname)
@@ -30,6 +33,9 @@ def createCaseRun():
         caserunname = request.json['caserunname']
         data = request.json['data']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+
         if casename != None:
             caserun = DataFile(casename)
             response = caserun.createCaseRun(caserunname, data)
@@ -45,6 +51,9 @@ def updateCaseRun():
         caserunname = request.json['caserunname']
         oldcaserunname = request.json['oldcaserunname']
         data = request.json['data']
+
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
 
         if casename != None:
             caserun = DataFile(casename)
@@ -89,6 +98,9 @@ def deleteScenarioCaseRuns():
         scenarioId = request.json['scenarioId']
         casename = request.json['casename']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+
         if casename != None:
             caserun = DataFile(casename)
             response = caserun.deleteScenarioCaseRuns(scenarioId)
@@ -104,6 +116,9 @@ def saveView():
         param = request.json['param']
         data = request.json['data']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+
         if casename != None:
             caserun = DataFile(casename)
             response = caserun.saveView(data, param)
@@ -118,6 +133,9 @@ def updateViews():
         casename = request.json['casename']
         param = request.json['param']
         data = request.json['data']
+
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
 
         if casename != None:
             caserun = DataFile(casename)
@@ -235,6 +253,9 @@ def batchRun():
         modelname = request.json['modelname']
         cases = request.json['cases']
 
+        if modelname is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+
         if modelname != None:
             txtFile = DataFile(modelname)
             for caserun in cases:
@@ -251,6 +272,9 @@ def batchRun():
 def cleanUp():
     try:
         modelname = request.json['modelname']
+
+        if modelname is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
 
         if modelname != None:
             model = DataFile(modelname)

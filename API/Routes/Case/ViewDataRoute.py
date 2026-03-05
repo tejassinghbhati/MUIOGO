@@ -7,6 +7,9 @@ viewdata_api = Blueprint('ViewDataRoute', __name__)
 def viewData():
     try:
         casename = request.json['casename']
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+        
         if casename != None:
             osy = Osemosys(casename)
             data = {}
@@ -24,6 +27,9 @@ def viewData():
 def viewTEData():
     try:
         casename = request.json['casename']
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+        
         if casename != None:
             osy = Osemosys(casename)
             data = {}
@@ -52,6 +58,9 @@ def updateViewData():
         Timeslice = request.json['Timeslice']
         value = request.json['value']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+        
         if casename != None:
             osy = Osemosys(casename)
             osy.updateViewData(casename, year, ScId, groupId, paramId, TechId, CommId, EmisId, Timeslice, value)
@@ -81,6 +90,9 @@ def updateTEViewData():
         emisId = request.json['emisId']
         value = request.json['value']
 
+        if casename is None:
+            return jsonify({'message': 'No model selected.', 'status_code': 'error'}), 400
+        
         if casename != None:
             osy = Osemosys(casename)
             data = osy.updateTEViewData(casename, scId, groupId, paramId, techId, emisId, value)
