@@ -233,15 +233,8 @@ def backupCase():
 
         return send_file(zippedFile.resolve(), as_attachment=True)
 
-<<<<<<< HEAD
-    except PermissionError:
-        return jsonify({"error": "Invalid path"}), 400
-    except(IOError):
-        return jsonify('No existing cases!'), 404
-=======
     except IOError:
         return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
->>>>>>> 52bc0504 (fix: replace bare raise OSError with structured JSON 500 responses)
     except OSError:
         return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
 
@@ -404,8 +397,8 @@ def uploadCaseUnchunked_old():
         }
 
         return jsonify(response), 200
-    except IOError:
-        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
+    except(IOError):
+        raise IOError
     except OSError:
         return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
 
@@ -654,7 +647,7 @@ def uploadXls():
         }
 
         return jsonify(response), 200
-    except IOError:
-        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
+    except(IOError):
+        raise IOError
     except OSError:
         return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
