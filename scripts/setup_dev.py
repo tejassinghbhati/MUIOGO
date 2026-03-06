@@ -63,8 +63,8 @@ _CBC_WINDOWS_URL = (
 _CBC_WINDOWS_SHA256 = "6acf3e300945b815b2cbb2b16d3732eeeec968a4962249167827062bbf83b3a3"
 _GLPK_WINDOWS_VERSION = "4.65"
 _GLPK_WINDOWS_URL = (
-    "https://sourceforge.net/projects/winglpk/files/winglpk/"
-    f"GLPK-{_GLPK_WINDOWS_VERSION}/winglpk-{_GLPK_WINDOWS_VERSION}.zip/download"
+    "https://downloads.sourceforge.net/project/winglpk/winglpk/"
+    f"GLPK-{_GLPK_WINDOWS_VERSION}/winglpk-{_GLPK_WINDOWS_VERSION}.zip"
 )
 # Upstream-published SHA-1 from SourceForge for download integrity verification.
 _GLPK_WINDOWS_SHA1 = "c232374bd706e39fdbe5cc4a7c38116e819daafa"
