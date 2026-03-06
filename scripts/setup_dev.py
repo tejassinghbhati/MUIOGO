@@ -63,10 +63,11 @@ _CBC_WINDOWS_URL = (
 _CBC_WINDOWS_SHA256 = "6acf3e300945b815b2cbb2b16d3732eeeec968a4962249167827062bbf83b3a3"
 _GLPK_WINDOWS_VERSION = "4.65"
 _GLPK_WINDOWS_URL = (
-    "https://downloads.sourceforge.net/project/winglpk/winglpk/"
-    f"GLPK-{_GLPK_WINDOWS_VERSION}/winglpk-{_GLPK_WINDOWS_VERSION}.zip"
+    "https://github.com/EAPD-DRB/MUIOGO/releases/download/solver-binaries/"
+    f"winglpk-{_GLPK_WINDOWS_VERSION}.zip"
 )
-# Upstream-published SHA-1 from SourceForge for download integrity verification.
+# SHA-1 published by SourceForge for winglpk-4.65.zip — used for upstream
+# traceability so anyone can verify this is the same file.
 _GLPK_WINDOWS_SHA1 = "c232374bd706e39fdbe5cc4a7c38116e819daafa"
 
 # Core packages that must be importable after setup
@@ -483,11 +484,12 @@ def _install_cbc_windows_manual() -> bool:
 
 def _install_glpk_windows_manual() -> bool:
     """
-    Fallback: download pre-built GLPK Windows binaries from SourceForge, verify
-    the upstream-published SHA-1 checksum, extract, and add to user PATH.
+    Fallback: download the original winglpk-4.65.zip (mirrored on the
+    project's GitHub releases), verify against SourceForge's published
+    SHA-1 checksum, extract, and add to PATH.
 
-    This is only used when Chocolatey is unavailable or ``choco install glpk``
-    fails.  The preferred installation path remains ``choco install glpk``.
+    This is only used when Chocolatey is unavailable or
+    ``choco install glpk`` fails.
     """
     install_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "glpk"
     tmp_path: Path | None = None
@@ -500,20 +502,11 @@ def _install_glpk_windows_manual() -> bool:
         os.close(fd)
         tmp_path = Path(tmp_str)
 
-        print(f"  Downloading GLPK {_GLPK_WINDOWS_VERSION} from SourceForge ...")
+        print(f"  Downloading GLPK {_GLPK_WINDOWS_VERSION} from GitHub ...")
         req = urllib.request.Request(_GLPK_WINDOWS_URL, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=120) as response:
             with open(tmp_path, "wb") as f:
                 f.write(response.read())
-
-        with open(tmp_path, "rb") as f:
-            magic = f.read(4)
-        if magic != b"PK\x03\x04":
-            _print_fail(
-                "GLPK download did not return a valid ZIP file",
-                "SourceForge may have returned an HTML page. Try again or download manually.",
-            )
-            return False
 
         print("  Verifying GLPK archive checksum ...")
         actual_sha = _sha1(tmp_path)
