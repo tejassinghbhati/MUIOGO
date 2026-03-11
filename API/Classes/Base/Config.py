@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import re
 from dotenv import load_dotenv
 import platform
 
@@ -30,6 +31,16 @@ def validate_path(base_dir, user_input):
         raise PermissionError("Path Traversal Attempt Detected")
 
     return target_abs
+
+# Case name allowlist validator (prevents path-unsafe characters, fixes #295)
+_VALID_CASE_NAME = re.compile(r'^[A-Za-z0-9 _\-]{1,64}$')
+
+def validate_casename(name: str) -> bool:
+    """Return True only if name consists solely of alphanumerics, spaces,
+    hyphens and underscores, and is between 1 and 64 characters long.
+    This is intentionally stricter than validate_path(), which only checks
+    that the resolved path stays inside DATA_STORAGE."""
+    return isinstance(name, str) and bool(_VALID_CASE_NAME.match(name))
 
 #load environment variables
 load_dotenv()

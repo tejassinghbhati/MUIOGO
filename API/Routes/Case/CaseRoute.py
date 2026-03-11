@@ -70,6 +70,10 @@ def getDesc():
 def copy():
     try:
         case = request.json['casename']
+
+        if not Config.validate_casename(case):
+            return jsonify({'message': 'Invalid model name. Use only letters, numbers, spaces, hyphens, or underscores (max 64 chars).', 'status_code': 'error'}), 400
+
         active_case = session.get('osycase')
 
         if not active_case:
@@ -108,6 +112,10 @@ def copy():
 def deleteCase():
     try:
         case = request.json['casename']
+
+        if not Config.validate_casename(case):
+            return jsonify({'message': 'Invalid model name. Use only letters, numbers, spaces, hyphens, or underscores (max 64 chars).', 'status_code': 'error'}), 400
+
         active_case = session.get('osycase')
 
         if not active_case:
@@ -249,6 +257,10 @@ def saveCase():
     try:
         genData = request.json['data']
         casename = genData['osy-casename']
+
+        if not Config.validate_casename(casename):
+            return jsonify({'message': 'Invalid model name. Use only letters, numbers, spaces, hyphens, or underscores (max 64 chars).', 'status_code': 'error'}), 400
+
         case = session.get('osycase', None)
 
         configPath = Path(Config.DATA_STORAGE, 'Variables.json')
