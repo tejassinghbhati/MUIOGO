@@ -37,4 +37,50 @@ body:
       description: Paste relevant output.
     validations:
       required: false
-
+  - type: textarea
+    id: related_issues
+    attributes:
+      label: Related issues reviewed
+      description: List related issues reviewed before opening this issue. Use issue numbers like #123, or write `None found after search`.
+    validations:
+      required: true
+  - type: textarea
+    id: related_prs
+    attributes:
+      label: Related PRs reviewed
+      description: List related PRs reviewed before opening this issue. Use PR numbers like #123, or write `None found after search`.
+    validations:
+      required: true
+  - type: dropdown
+    id: overlap
+    attributes:
+      label: Overlap classification
+      description: Choose the best overlap classification for this issue.
+      options:
+        - none
+        - duplicate
+        - alternative approach
+        - complementary follow-up
+        - narrower fix
+        - superseding
+    validations:
+      required: true
+  - type: textarea
+    id: still_needed
+    attributes:
+      label: Why this issue is still needed
+      description: If related work exists, explain why this issue should still be tracked separately.
+    validations:
+      required: true
+  - type: dropdown
+    id: proposed_track
+    attributes:
+      label: Proposed track
+      description: Maintainers will assign the final track label.
+      options:
+        - Track: Cross-Platform
+        - Track: OG Onboarding
+        - Track: Integration
+        - Track: Stability
+    validations:
+      required: true
