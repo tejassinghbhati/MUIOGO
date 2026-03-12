@@ -233,8 +233,10 @@ def backupCase():
 
         return send_file(zippedFile.resolve(), as_attachment=True)
 
-    except IOError:
-        return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
+    except PermissionError:
+        return jsonify({"error": "Invalid path"}), 400
+    except(IOError):
+        return jsonify('No existing cases!'), 404
     except OSError:
         return jsonify({'message': 'A filesystem error occurred.', 'status_code': 'error'}), 500
 
