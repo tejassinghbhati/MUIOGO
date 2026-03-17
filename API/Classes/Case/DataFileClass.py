@@ -2083,7 +2083,7 @@ class DataFile(Osemosys):
         except OSError:
             raise OSError
 
-    def run( self, solver, caserun, lock=None ):
+    def run( self, solver, caserun, lock=None, progress_cb=None ):
         try:
             caserunname = caserun
             if lock is not None:
@@ -2151,6 +2151,7 @@ class DataFile(Osemosys):
                 self.preprocessData(self.dataFile, self.dataFile_processed)
                 print("PREPROCESSING DONE! --- %s seconds --- %s" % (time.time() - start_time, caserunname))
                 txtOut = txtOut + ("Preprocessing time {:0.2f}s;{}".format(time.time() - start_time, '\n'))
+                if progress_cb: progress_cb("preprocessing", 20)
 
                 #return output to variable preprocessed data file
                 glpk_out = subprocess.run(
@@ -2169,6 +2170,7 @@ class DataFile(Osemosys):
                 
                 print("CREATINON OF LP FILE DONE! --- %s seconds --- %s" % (time.time() - start_time, caserunname))
                 txtOut = txtOut + ("Creation of LP file time {:0.2f}s;{}".format(time.time() - start_time, '\n'))
+                if progress_cb: progress_cb("lp_generation", 50)
 
 
                 ####output to logfile.txt
@@ -2192,6 +2194,7 @@ class DataFile(Osemosys):
                 # -printing all prints all constraints to result.txt
                 print("SOLUTION DONE! --- %s seconds --- %s" % (time.time() - start_time, caserunname))
                 txtOut = txtOut + ("Solution time {:0.2f}s;{}".format(time.time() - start_time, '\n'))
+                if progress_cb: progress_cb("solving", 80)
                 ####output to lg file .log i .txt with errors
                 # out = subprocess.run('cbc ' + lpfile +' solve -solu '  + resultfile +'>'+ logfile, cwd=cbcfolder,  capture_output=True, text=True, shell=True)
                 #out = subprocess.run('cbc ' + lpfile +' solve -solu '  + resultfile +'>'+ logfiletxt +'2>&1', cwd=cbcfolder,  capture_output=True, text=True, shell=True)
@@ -2234,9 +2237,11 @@ class DataFile(Osemosys):
                     statusFlag = "error"
 
                 if statusFlag == "success":
+                    if progress_cb: progress_cb("csv_extraction", 90)
                     self.generateCSVfromCBC(self.dataFile, self.resFile, self.resPath)
                     print("CSV DONE! --- %s seconds --- %s" % (time.time() - start_time, caserunname))
                     txtOut = txtOut + ("csv files extraction time {:0.2f} s;{}".format(time.time() - start_time, '\n'))
+                    if progress_cb: progress_cb("pivot_tables", 95)
                     self.generateResultsViewer(caserunname)
                     print("PIVOT TABLE DONE! --- %s seconds --- %s" % (time.time() - start_time, caserunname))
                     txtOut = txtOut + ("Pivot data preparation time {:0.2f}s;{}".format(time.time() - start_time, '\n'))

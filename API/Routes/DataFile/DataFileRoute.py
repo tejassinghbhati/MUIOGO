@@ -1,10 +1,27 @@
 from flask import Blueprint, jsonify, request, send_file, session
 from pathlib import Path
-import shutil, datetime, time, os
+import shutil, datetime, time, os, uuid, threading
 from Classes.Case.DataFileClass import DataFile
 from Classes.Base import Config
+from Classes.Base.CustomThreadClass import CustomThread
 
 datafile_api = Blueprint('DataFileRoute', __name__)
+
+# ── Async run registry ────────────────────────────────────────────────────────
+# Keys are run_id strings (uuid4).  Values:
+#   status      : 'pending' | 'running' | 'done' | 'error'
+#   stage       : current named stage string
+#   progress_pct: int 0-100
+#   result      : final response dict (set on completion, else None)
+#   error       : error message string (set on failure, else None)
+_RUN_REGISTRY: dict = {}
+_registry_lock = threading.Lock()
+
+
+def _registry_update(run_id: str, **kwargs) -> None:
+    """Thread-safe helper to update a registry entry."""
+    with _registry_lock:
+        _RUN_REGISTRY[run_id].update(kwargs)
 
 @datafile_api.route("/generateDataFile", methods=['POST'])
 def generateDataFile():
@@ -227,6 +244,62 @@ def run():
     
     except(IOError):
         return jsonify('No existing cases!'), 404
+
+
+@datafile_api.route("/runAsync", methods=['POST'])
+def runAsync():
+    """Dispatch a solver run in a background thread and return a run_id immediately."""
+    try:
+        casename    = request.json['casename']
+        caserunname = request.json['caserunname']
+        solver      = request.json.get('solver', 'cbc')
+
+        run_id = str(uuid.uuid4())
+        with _registry_lock:
+            _RUN_REGISTRY[run_id] = {
+                "status":       "pending",
+                "stage":        "queued",
+                "progress_pct": 0,
+                "result":       None,
+                "error":        None,
+            }
+
+        def _target():
+            _registry_update(run_id, status="running", stage="starting", progress_pct=5)
+            try:
+                def _progress(stage: str, pct: int) -> None:
+                    _registry_update(run_id, stage=stage, progress_pct=pct)
+
+                txt    = DataFile(casename)
+                result = txt.run(solver, caserunname, progress_cb=_progress)
+                _registry_update(
+                    run_id,
+                    status="done",
+                    stage="done",
+                    progress_pct=100,
+                    result=result,
+                )
+            except Exception as exc:
+                _registry_update(run_id, status="error", error=str(exc))
+
+        t = CustomThread(target=_target)
+        t.start()
+
+        return jsonify({"run_id": run_id}), 202
+
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
+@datafile_api.route("/runStatus", methods=['GET'])
+def runStatus():
+    """Return the current status of an async run by run_id."""
+    run_id = request.args.get('run_id', '')
+    with _registry_lock:
+        entry = _RUN_REGISTRY.get(run_id)
+    if entry is None:
+        return jsonify({"error": "Unknown run_id"}), 404
+    return jsonify(entry), 200
     
 @datafile_api.route("/batchRun", methods=['POST'])
 def batchRun():

@@ -225,15 +225,55 @@ export class Osemosys {
                 dataType: 'json',
                 data: JSON.stringify({ "casename": casename, "solver": solver, 'caserunname': caserunname  }),
                 contentType: 'application/json; charset=utf-8',
-                // credentials: 'include',
-                // xhrFields: { withCredentials: true},
-                // crossDomain: true,
                 success: function (result) {             
                     resolve(result);
                 },
                 error: function(xhr, status, error) {
                     console.log("xhr, status, error ", xhr, status, error )
                     if(error == 'UNKNOWN'){ error =  xhr.responseJSON.message }
+                    reject(error);
+                }
+            });
+        });
+    }
+
+    /**
+     * Dispatch a solver run asynchronously.
+     * Returns a Promise that resolves to { run_id } immediately (<200 ms).
+     */
+    static runAsync(casename, solver, caserunname) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: Base.apiUrl() + "runAsync",
+                async: true,
+                type: 'POST',
+                dataType: 'json',
+                data: JSON.stringify({ "casename": casename, "solver": solver, "caserunname": caserunname }),
+                contentType: 'application/json; charset=utf-8',
+                success: function (result) { resolve(result); },
+                error: function(xhr, status, error) {
+                    if(error == 'UNKNOWN'){ error = xhr.responseJSON.message; }
+                    reject(error);
+                }
+            });
+        });
+    }
+
+    /**
+     * Poll the status of a run by run_id.
+     * Returns a Promise that resolves to:
+     *   { status, stage, progress_pct, result, error }
+     */
+    static runStatus(run_id) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: Base.apiUrl() + "runStatus?run_id=" + encodeURIComponent(run_id),
+                async: true,
+                type: 'GET',
+                dataType: 'json',
+                success: function (result) { resolve(result); },
+                error: function(xhr, status, error) {
+                    if(error == 'UNKNOWN'){ error = xhr.responseJSON.message; }
                     reject(error);
                 }
             });

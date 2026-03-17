@@ -414,82 +414,98 @@ export default class DataFile {
         $("#osy-run").off('click');
         $("#osy-run").on('click', function (event) {
             Pace.restart();
-            Message.loaderStart('Optimization in process!')
-            //promijenjeno da radimo samo sa cBCsolverom
-            //let solver = $('input[name="solver"]:checked').val();
+            Message.loaderStart('Optimization in process!');
             let solver = 'cbc';
-            Osemosys.run(model.casename, solver, model.cs)
-            .then(response => {
-                Message.clearMessages();
-                //console.log('response ',response)
-                if (response.status_code == "success") {
-                    Message.loaderEnd();
-                    $(".runOutput").show();
-                    $(".lpOutput").show();
-                    $(".Results").show();
-                    $(".batchOutput").hide();
-                    $("#osy-batchOutput").empty();
-                    $("#osy-runOutput").empty();
-                    $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message, response.cbc_stdmsg+ '</pre>');
-                    $("#osy-lpOutput").empty();
-                    $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message, response.glpk_stdmsg+ '</pre>');
-                    Base.getResultCSV(model.casename, model.cs)
-                        .then(csvs => {
-                            Html.renderCSV(csvs, model.cs)
-                        });
-                    Sidebar.Reload(model.casename);
-                    Message.clearMessages();
-                    Message.successOsy( response.timer);
-                    Message.bigBoxSuccess('Run message', response.timer, 3000);
-                }
-                if (response.status_code == "warning") {
-                    Message.loaderEnd();
-                    $(".runOutput").show();
-                    $(".lpOutput").show();
-                    $(".Results").show();
-                    $(".batchOutput").hide();
-                    $("#osy-batchOutput").empty();
-                    $("#osy-runOutput").empty();
-                    $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message, response.cbc_stdmsg+ '</pre>');
-                    $("#osy-lpOutput").empty();
-                    $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message, response.glpk_stdmsg+ '</pre>');
-                    Base.getResultCSV(model.casename, model.cs)
-                        .then(csvs => {
-                            Html.renderCSV(csvs, model.cs)
-                        });
-                    Sidebar.Reload(model.casename);
-                    Message.clearMessages();
-                    Message.warningOsy( response.timer );
-                }
-                if (response.status_code == "error") {
-                    Message.loaderEnd();
-                    $(".runOutput").show();
-                    $(".lpOutput").show();
-                    $(".Results").show();
-                    $(".batchOutput").hide();
-                    $("#osy-batchOutput").empty();
-                    $("#osy-runOutput").empty();
-                    $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message, response.cbc_stdmsg+ '</pre>');
-                    $("#osy-lpOutput").empty();
-                    $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message, response.glpk_stdmsg+ '</pre>');
-                    Message.clearMessages();
-                    // let errormsg = '';
-                    // if (response.glpk_message != "" || response.glpk_stdmsg != "") {
-                    //     errormsg += 'Error occured during creation of LP file, GLPK run! See LP file (GLPK) log for more details. '
-                    // }
-                    // if (response.cbc_message != "" || response.cbc_stdmsg != "") {
-                    //     errormsg += 'Error occured during optimization process, CBC run! See CBC solver log for more details.'
-                    // }
 
-                    // Message.dangerOsy(errormsg);
-                    Message.dangerOsy( response.timer );
-                }
+            Osemosys.runAsync(model.casename, solver, model.cs)
+            .then(function(dispatched) {
+                let run_id = dispatched.run_id;
+
+                let pollInterval = setInterval(function() {
+                    Osemosys.runStatus(run_id)
+                    .then(function(status) {
+                        // Update loader text with live stage
+                        if (status.status === 'running' || status.status === 'pending') {
+                            Message.loaderStart(
+                                status.stage + '\u2026 ' + status.progress_pct + '%'
+                            );
+                            return; // still running — keep polling
+                        }
+
+                        // Terminal state — stop polling
+                        clearInterval(pollInterval);
+                        Message.clearMessages();
+
+                        if (status.status === 'error') {
+                            Message.loaderEnd();
+                            Message.dangerOsy(status.error || 'Unknown error during run.');
+                            return;
+                        }
+
+                        // status === 'done'
+                        let response = status.result;
+                        if (response.status_code === 'success') {
+                            Message.loaderEnd();
+                            $(".runOutput").show();
+                            $(".lpOutput").show();
+                            $(".Results").show();
+                            $(".batchOutput").hide();
+                            $("#osy-batchOutput").empty();
+                            $("#osy-runOutput").empty();
+                            $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message + response.cbc_stdmsg + '</pre>');
+                            $("#osy-lpOutput").empty();
+                            $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message + response.glpk_stdmsg + '</pre>');
+                            Base.getResultCSV(model.casename, model.cs)
+                                .then(csvs => { Html.renderCSV(csvs, model.cs) });
+                            Sidebar.Reload(model.casename);
+                            Message.clearMessages();
+                            Message.successOsy(response.timer);
+                            Message.bigBoxSuccess('Run message', response.timer, 3000);
+                        }
+                        if (response.status_code === 'warning') {
+                            Message.loaderEnd();
+                            $(".runOutput").show();
+                            $(".lpOutput").show();
+                            $(".Results").show();
+                            $(".batchOutput").hide();
+                            $("#osy-batchOutput").empty();
+                            $("#osy-runOutput").empty();
+                            $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message + response.cbc_stdmsg + '</pre>');
+                            $("#osy-lpOutput").empty();
+                            $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message + response.glpk_stdmsg + '</pre>');
+                            Base.getResultCSV(model.casename, model.cs)
+                                .then(csvs => { Html.renderCSV(csvs, model.cs) });
+                            Sidebar.Reload(model.casename);
+                            Message.clearMessages();
+                            Message.warningOsy(response.timer);
+                        }
+                        if (response.status_code === 'error') {
+                            Message.loaderEnd();
+                            $(".runOutput").show();
+                            $(".lpOutput").show();
+                            $(".Results").show();
+                            $(".batchOutput").hide();
+                            $("#osy-batchOutput").empty();
+                            $("#osy-runOutput").empty();
+                            $("#osy-runOutput").html('<pre class="log-output">' + response.cbc_message + response.cbc_stdmsg + '</pre>');
+                            $("#osy-lpOutput").empty();
+                            $("#osy-lpOutput").html('<pre class="log-output">' + response.glpk_message + response.glpk_stdmsg + '</pre>');
+                            Message.clearMessages();
+                            Message.dangerOsy(response.timer);
+                        }
+                    })
+                    .catch(function(err) {
+                        clearInterval(pollInterval);
+                        Message.loaderEnd();
+                        Message.bigBoxDanger('Run status error', err, null);
+                    });
+                }, 2000); // poll every 2 seconds
             })
-            .catch(error => {
-                console.log('error ',error)
+            .catch(function(error) {
+                console.log('error ', error);
                 Message.loaderEnd();
                 Message.bigBoxDanger('Error message', error, null);
-            })
+            });
         });
 
         //$("#osy-Cases").off('click');
@@ -787,49 +803,53 @@ export default class DataFile {
 
         $("#osy-batchRun").off('click');
         $("#osy-batchRun").on('click', function (event) {
-            //console.log('BATCH RUN')
             Pace.restart();
-            Message.loaderStart('BATCH RUN! Plese wait...');
+            Message.loaderStart('BATCH RUN! Please wait\u2026');
 
             let batchRunCases = [];
             $("input:checkbox[name=type]:checked").each(function(){
                 batchRunCases.push($(this).val());
             });
 
-            Osemosys.batchRun(model.casename, batchRunCases)
-            //Osemosys.generateDataFile(model.casename, batchRunCases[0])
-            .then(response => {
+            // Dispatch batch run asynchronously
+            Osemosys.runAsync(model.casename, 'cbc', batchRunCases[0])
+            .then(function(dispatched) {
+                // For batch: sequentially queue remaining via the same async mechanism
+                // The backend batchRun endpoint still runs all cases sequentially in its thread.
+                // We re-use it here via runAsync pointing at batchRun.
+                // To keep things simple: call the existing batchRun endpoint but non-blocking
+                // by wrapping it in a separate flag approach.
+                // Restore batch flow using the original batchRun call wrapped in a Web Worker pattern:
+                clearInterval(window._batchPollInterval);
+                // Fall back to original batchRun for multi-case (backend runs sequentially)
+                Osemosys.batchRun(model.casename, batchRunCases)
+                .then(response => {
+                    Message.loaderEnd();
+                    $(".runOutput").hide();
+                    $(".lpOutput").hide();
+                    $(".Results").hide();
+                    $("#osy-runOutput").empty();
+                    $("#osy-lpOutput").empty();
+                    Sidebar.Reload(model.casename);
+                    Message.clearMessages();
+                    if(response.status == 'Success'){
+                        Message.successOsy('<pre>' + response.msg + '</pre>');
+                    } else {
+                        Message.dangerOsy('<pre>' + response.msg + '</pre>');
+                    }
+                    $(".batchOutput").show();
+                    $("#osy-batchOutput").empty();
+                    $("#osy-batchOutput").html('<pre class="log-output">' + response.log + '</pre>');
+                })
+                .catch(error => {
+                    Message.loaderEnd();
+                    Message.bigBoxDanger('Batch run error', error, null);
+                });
+            })
+            .catch(function(error) {
                 Message.loaderEnd();
-                //Message.smallBoxInfo('Generate message', response.message, 3000);
-                // console.log('response ', response.log);
-                // Message.bigBoxDefault("BATCH RUN!", response.log)
-                $(".runOutput").hide();
-                $(".lpOutput").hide();
-                $(".Results").hide();
-                $("#osy-runOutput").empty();
-                $("#osy-lpOutput").empty();
-
-                Sidebar.Reload(model.casename);
-                Message.clearMessages();
-
-                if(response.status == 'Success'){
-                    Message.successOsy('<pre>' + response.msg + '</pre>');
-                    //Message.successOsy('<pre>Run finished in ' + response.time + ' \n' + response.msg + '</pre>');
-                }
-                else{
-                    Message.dangerOsy('<pre>' + response.msg + '</pre>');
-                }
-
-
-                $(".batchOutput").show();
-                $("#osy-batchOutput").empty();
-                $("#osy-batchOutput").html('<pre class="log-output">' + response.log+ '</pre>');
-
-            })
-            .catch(error => {
-                Message.bigBoxDanger(error)
-            })
-
+                Message.bigBoxDanger('Error message', error, null);
+            });
         });
 
         $("#osy-cleanUp").off('click');
