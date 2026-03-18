@@ -180,6 +180,19 @@ def updateTimeslices_OnlyTs(casename):
     RYCTsPath = Path(Config.DATA_STORAGE, casename, 'RYCTs.json')
     RYCTsPath.write_text(RYCTsPath.read_text().replace('Timeslice', 'TsId'))
 ##############################################################Multithreading example#########################3
+class Download(Thread):
+    def __init__(self, request, zippedFile):
+        Thread.__init__(self)
+        self.request = request
+        self.zippedFile = zippedFile
+
+    def run(self):
+        print("wait few seconds for download to finish")
+        time.sleep(20)
+        #print(self.request)
+        #remove zipped file
+        os.remove(self.zippedFile)
+        print("Deletion of zip archive done!")
 
 
 @upload_api.route("/backupCase", methods=['GET'])
@@ -195,6 +208,8 @@ def backupCase():
 
         if not casePath.is_dir():
             return jsonify({'message': 'Case not found.', 'status_code': 'error'}), 404
+        casePath = Path(Config.validate_path(Config.DATA_STORAGE, case))
+        zippedFile = Path(Config.validate_path(Config.DATA_STORAGE, f"{case}.zip"))
 
         with ZipFile(zippedFile, 'w') as zipObj:
             for folderName, subfolders, filenames in os.walk(str(casePath)):
@@ -215,6 +230,12 @@ def backupCase():
 
     except OSError as e:
         return jsonify({'message': f'Filesystem error: {str(e)}', 'status_code': 'error'}), 500
+    except PermissionError:
+        return jsonify({"error": "Invalid path"}), 400
+    except(IOError):
+        return jsonify('No existing cases!'), 404
+    except OSError:
+        raise OSError
 
 @upload_api.route('/uploadCaseUnchunked_old', methods=['POST'])
 def uploadCaseUnchunked_old():
@@ -386,9 +407,10 @@ def handle_full_zip(file, filepath=None):
     # Ako je file objekat (upload iz browsera)
     if filepath is None:
         submitted_file = file.filename
-        filepath = os.path.join(Config.DATA_STORAGE, submitted_file)
+        filepath = Config.validate_path(Config.DATA_STORAGE, submitted_file)
         file.save(filepath)
     else:
+        filepath = Config.validate_path(Config.DATA_STORAGE, filepath)
         submitted_file = os.path.basename(filepath)
 
     case = os.path.splitext(submitted_file)[0]
@@ -538,7 +560,7 @@ def uploadCase():
         # -------------------------------
         # 2) Snimi chunk
         # -------------------------------
-        chunk_dir = os.path.join(Config.DATA_STORAGE, "_chunks", dz_uuid)
+        chunk_dir = Config.validate_path(Config.DATA_STORAGE, Path("_chunks", dz_uuid))
         os.makedirs(chunk_dir, exist_ok=True)
 
         chunk_path = os.path.join(chunk_dir, f"chunk_{dz_chunk_index}")
@@ -555,7 +577,7 @@ def uploadCase():
         # -------------------------------
         # 4) Spajanje ZIP fajla
         # -------------------------------
-        final_zip = os.path.join(Config.DATA_STORAGE, f"{dz_uuid}.zip")
+        final_zip = Config.validate_path(Config.DATA_STORAGE, f"{dz_uuid}.zip")
 
         with open(final_zip, "wb") as merged:
             for i in range(dz_total_chunks):
@@ -577,6 +599,8 @@ def uploadCase():
         #return handle_full_zip(open(final_zip, "rb"), final_zip)
         return handle_full_zip(None, final_zip) 
 
+    except PermissionError:
+        return jsonify({"error": "Invalid path"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
